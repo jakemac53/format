@@ -1,4 +1,5 @@
 name: format
+version: 1.0.0-dev
 description: >
   A wrapper around `dart format` which supports some extra configuration through
   `format.yaml` configuration files.
