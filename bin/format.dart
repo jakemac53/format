@@ -6,11 +6,20 @@ import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 void main(List<String> args) async {
-  var configFile = File(p.absolute('format.yaml'));
+  if (args.isEmpty) {
+    throw ArgumentError('Must provide a path to format');
+  }
+  await Future.wait([
+    for (var path in args) formatPath(path),
+  ]);
+}
+
+Future<void> formatPath(String path) async {
+  var configFile = File(p.absolute('format.dart.yaml'));
   Object? configYaml;
   while (true) {
     if (await configFile.exists()) {
-      print('loading config from ${configFile.path}');
+      print('Formatting $path with config from ${configFile.path}');
       configYaml =
           loadYaml(await configFile.readAsString(), sourceUrl: configFile.uri);
       break;
@@ -26,9 +35,10 @@ void main(List<String> args) async {
     throw ArgumentError(
         'Expected the ${configFile.uri} to contain a Map, but got $configYaml');
   }
-  final pageWidth = configYaml['page_width'] ?? 80;
+  final pageWidth = configYaml['line_length'] ?? 80;
   if (pageWidth is! int) {
-    throw YamlException('Expected an integer for `page_width`', pageWidth.span);
+    throw YamlException(
+        'Expected an integer for `line_length`', pageWidth.span);
   }
   final formatter = DartFormatter(pageWidth: pageWidth);
 
@@ -49,18 +59,12 @@ void main(List<String> args) async {
     for (var exclude in excludes) Glob(exclude),
   ];
   final Stream<FileSystemEntity> allFiles;
-  if (args.isEmpty) {
-    allFiles = Directory.current.list(recursive: true);
+  if (await FileSystemEntity.isDirectory(path)) {
+    allFiles = Directory(path).list(recursive: true);
   } else {
-    if (args.length > 1)
-      throw ArgumentError('Only one path is supported right now');
-    final path = args.first;
-    if (await FileSystemEntity.isDirectory(path)) {
-      allFiles = Directory(path).list(recursive: true);
-    } else {
-      allFiles = Stream.fromIterable([File(path)]);
-    }
+    allFiles = Stream.fromIterable([File(path)]);
   }
+
   allFiles.listen((file) async {
     if (file is! File) return;
     var path = p.relative(file.path, from: p.dirname(configFile.path));
