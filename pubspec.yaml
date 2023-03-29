@@ -1,0 +1,10 @@
+name: format
+description: >
+  A wrapper around `dart format` which supports some extra configuration through
+  `format.yaml` configuration files.
+environment:
+  sdk: '>=2.12.0 <3.0.0'
+dependencies:
+  dart_style: ^2.0.0
+  glob: ^2.0.0
+  yaml: ^3.0.0
