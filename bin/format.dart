@@ -1,20 +1,24 @@
 import 'dart:io';
 
 import 'package:dart_style/dart_style.dart';
+import 'package:format/src/args.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 void main(List<String> args) async {
-  if (args.isEmpty) {
+  final parsedArgs = argParser.parse(args);
+  final config = FormatConfig.fromArgs(parsedArgs);
+  final paths = parsedArgs.rest;
+  if (paths.isEmpty) {
     throw ArgumentError('Must provide a path to format');
   }
   await Future.wait([
-    for (var path in args) formatPath(path),
+    for (var path in paths) formatPath(path, config),
   ]);
 }
 
-Future<void> formatPath(String path) async {
+Future<void> formatPath(String path, FormatConfig config) async {
   var configFile = File(p.absolute('format.dart.yaml'));
   Object? configYaml;
   while (true) {
@@ -77,7 +81,16 @@ Future<void> formatPath(String path) async {
       print('Unchanged ${path}');
     } else {
       print('Changed ${path}');
-      await file.writeAsString(formatted);
+      switch (config.outputOption) {
+        case OutputOption.write:
+          await file.writeAsString(formatted);
+          break;
+        case OutputOption.show:
+          print(formatted);
+          break;
+        case OutputOption.none:
+          break;
+      }
     }
   });
 }
