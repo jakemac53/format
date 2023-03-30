@@ -8,6 +8,15 @@ import 'package:yaml/yaml.dart';
 
 void main(List<String> args) async {
   final parsedArgs = argParser.parse(args);
+  if (parsedArgs[helpFlag] as bool) {
+    print('''
+Idiomatically format Dart source code, with support for format.dart.yml files.
+
+Usage: format [options...] <files or directories...>]
+${argParser.usage}
+''');
+    return;
+  }
   final config = FormatConfig.fromArgs(parsedArgs);
   final paths = parsedArgs.rest;
   if (paths.isEmpty) {
@@ -81,14 +90,15 @@ Future<void> formatPath(String path, FormatConfig config) async {
       print('Unchanged ${path}');
     } else {
       print('Changed ${path}');
-      switch (config.outputOption) {
-        case OutputOption.write:
+      if (config.setExitIfChanged) exitCode = 1;
+      switch (config.outputConfig) {
+        case OutputConfig.write:
           await file.writeAsString(formatted);
           break;
-        case OutputOption.show:
+        case OutputConfig.show:
           print(formatted);
           break;
-        case OutputOption.none:
+        case OutputConfig.none:
           break;
       }
     }
